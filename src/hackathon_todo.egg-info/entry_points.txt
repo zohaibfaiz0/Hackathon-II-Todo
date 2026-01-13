@@ -1,0 +1,2 @@
+[console_scripts]
+todo-cli = hackathon_todo.__main__:main

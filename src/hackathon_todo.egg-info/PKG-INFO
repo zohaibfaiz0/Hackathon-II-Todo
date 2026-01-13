@@ -1,0 +1,173 @@
+Metadata-Version: 2.4
+Name: hackathon-todo
+Version: 0.1.0
+Summary: Console application for managing todo tasks
+Author-email: Developer <dev@example.com>
+License: MIT
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: click>=8.1.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: uv>=0.1.0; extra == "dev"
+
+# Hackathon Todo - Console Application
+
+A console application for managing todo tasks, built as part of the "Evolution of Todo - Hackathon II" project.
+
+## Features
+
+- Add new tasks with title and optional description
+- View all tasks in a formatted table
+- Update existing tasks
+- Delete tasks
+- Mark tasks as complete/incomplete
+
+## Prerequisites
+
+- Python 3.13 or higher
+- UV package manager
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd hackathon-todo
+   ```
+
+2. Install dependencies using UV:
+   ```bash
+   uv sync --all-extras
+   ```
+
+3. Install the package in development mode:
+   ```bash
+   uv build
+   uv install -e .
+   ```
+
+## Usage
+
+The application provides a command-line interface with the following commands:
+
+### Add a Task
+```bash
+todo-cli add --title "Task Title" --description "Task Description"
+```
+
+### List All Tasks
+```bash
+todo-cli list
+```
+
+### View a Specific Task
+```bash
+todo-cli view <task-id>
+```
+
+### Update a Task
+```bash
+todo-cli update <task-id> --title "New Title" --description "New Description"
+```
+
+### Delete a Task
+```bash
+todo-cli delete <task-id>
+```
+
+### Mark a Task as Complete
+```bash
+todo-cli complete <task-id>
+```
+
+### Mark a Task as Incomplete
+```bash
+todo-cli uncomplete <task-id>
+```
+
+## Project Structure
+
+```
+hackathon-todo/
+├── src/
+│   └── hackathon_todo/
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── cli/
+│       │   ├── __init__.py
+│       │   ├── app.py
+│       │   ├── commands.py
+│       │   └── display.py
+│       ├── domain/
+│       │   ├── __init__.py
+│       │   ├── models.py
+│       │   └── exceptions.py
+│       ├── services/
+│       │   ├── __init__.py
+│       │   └── task_service.py
+│       └── storage/
+│           ├── __init__.py
+│           ├── interface.py
+│           └── in_memory_storage.py
+├── tests/
+│   ├── domain/
+│   ├── services/
+│   └── cli/
+├── pyproject.toml
+└── README.md
+```
+
+## Architecture
+
+The application follows a layered architecture:
+
+- **Presentation Layer (CLI)**: Handles user interaction and command parsing
+- **Application Layer (Services)**: Coordinates operations and business logic
+- **Domain Layer**: Contains models and business rules
+- **Infrastructure Layer (Storage)**: Manages data persistence
+
+## Development
+
+### Running Tests
+
+To run all tests:
+```bash
+uv run pytest
+```
+
+To run tests with coverage:
+```bash
+uv run pytest --cov=src/hackathon_todo
+```
+
+### Running the Application
+
+To run the application directly:
+```bash
+uv run python -m hackathon_todo
+```
+
+Or using the installed command:
+```bash
+todo-cli --help
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`uv run pytest`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
