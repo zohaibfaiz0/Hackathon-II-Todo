@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv run python -m hackathon_todo --help)"
+      "Bash(uv run python -m hackathon_todo --help)",
+      "Bash(python -m alembic upgrade head)",
+      "Bash(ping -n 5 127.0.0.)",
+      "Bash(uv run uvicorn src.hackathon_todo_api.main:app --reload --port 8000)"
     ]
   }
 }
