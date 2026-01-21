@@ -4,8 +4,8 @@ import TaskCard from './TaskCard';
 
 interface TaskListProps {
   tasks: Task[];
-  onToggleComplete: (id: string, currentStatus: boolean) => void;
-  onDelete: (id: string) => void;
+  onToggleComplete: (id: number, currentStatus: boolean) => void;
+  onDelete: (id: number) => void;
   filter: 'all' | 'pending' | 'completed';
 }
 

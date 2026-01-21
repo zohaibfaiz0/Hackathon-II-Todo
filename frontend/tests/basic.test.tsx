@@ -4,19 +4,22 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { TaskCard } from '../src/components/tasks/TaskCard';
+import TaskCard from '../src/components/tasks/TaskCard';
 import { Task } from '../src/types';
 
 // Mock Task type for testing
 const mockTask: Task = {
-  id: '1',
-  userId: 'user1',
+  id: 1,
+  user_id: 'user1',
   title: 'Test Task',
   description: 'Test Description',
   completed: false,
-  createdAt: '2023-01-01T00:00:00Z',
-  updatedAt: '2023-01-01T00:00:00Z',
+  created_at: '2023-01-01T00:00:00Z',
+  updated_at: '2023-01-01T00:00:00Z',
 };
+
+// Define jest type for testing
+const mockJest = jest;
 
 describe('TaskCard Component', () => {
   it('renders task title and description', () => {

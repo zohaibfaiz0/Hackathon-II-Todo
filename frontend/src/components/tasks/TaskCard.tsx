@@ -5,8 +5,8 @@ import Button from '../ui/Button';
 
 interface TaskCardProps {
   task: Task;
-  onToggleComplete: (id: string, currentStatus: boolean) => void;
-  onDelete: (id: string) => void;
+  onToggleComplete: (id: number, currentStatus: boolean) => void;
+  onDelete: (id: number) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleComplete, onDelete }) => {
@@ -24,7 +24,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleComplete, onDelete })
               </p>
             )}
             <div className="mt-2 text-xs text-gray-500">
-              Created: {new Date(task.createdAt).toLocaleDateString()}
+              Created: {new Date(task.created_at).toLocaleDateString()}
             </div>
           </div>
           <div className="flex space-x-2 ml-4">

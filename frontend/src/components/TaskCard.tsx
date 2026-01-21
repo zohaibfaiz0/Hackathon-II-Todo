@@ -2,8 +2,8 @@ import { Task } from '@/types';
 
 interface TaskCardProps {
   task: Task;
-  onToggleComplete: (id: string, currentStatus: boolean) => void;
-  onDelete: (id: string) => void;
+  onToggleComplete: (id: number, currentStatus: boolean) => void;
+  onDelete: (id: number) => void;
   onEdit?: (task: Task) => void;
 }
 
