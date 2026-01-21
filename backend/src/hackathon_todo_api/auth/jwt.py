@@ -37,7 +37,7 @@ def verify_token(token: str) -> TokenData:
         if user_id is None:
             raise credentials_exception
         token_data = TokenData(user_id=user_id)
-    except jwt.JWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
     return token_data
 
