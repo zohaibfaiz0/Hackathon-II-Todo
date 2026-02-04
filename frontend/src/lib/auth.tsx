@@ -26,10 +26,13 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 // Authentication functions
 export const login = async (email: string, password: string): Promise<SessionData> => {
   try {
+    // Truncate password to 72 characters to comply with bcrypt limit
+    const truncatedPassword = password.length > 72 ? password.substring(0, 72) : password;
+
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password: truncatedPassword })
     });
 
     if (!response.ok) {
@@ -68,10 +71,13 @@ export const login = async (email: string, password: string): Promise<SessionDat
 
 export const signup = async (email: string, password: string): Promise<SessionData> => {
   try {
+    // Truncate password to 72 characters to comply with bcrypt limit
+    const truncatedPassword = password.length > 72 ? password.substring(0, 72) : password;
+
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password: truncatedPassword })
     });
 
     if (!response.ok) {

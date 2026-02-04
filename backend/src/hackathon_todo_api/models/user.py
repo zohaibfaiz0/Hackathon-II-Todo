@@ -1,25 +1,28 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
-import uuid
 
 
 class UserBase(SQLModel):
-    email: str = Field(unique=True, nullable=False)
+    email: str = Field(unique=True, index=True)
 
 
 class User(UserBase, table=True):
-    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    __tablename__ = "users"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class UserCreate(UserBase):
+class UserCreate(SQLModel):
+    email: str
     password: str
 
 
-class UserRead(UserBase):
-    id: uuid.UUID
+class UserRead(SQLModel):
+    id: int
+    email: str
     created_at: datetime
     updated_at: datetime

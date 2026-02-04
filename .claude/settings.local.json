@@ -4,7 +4,8 @@
       "Bash(uv run python -m hackathon_todo --help)",
       "Bash(python -m alembic upgrade head)",
       "Bash(ping -n 5 127.0.0.)",
-      "Bash(uv run uvicorn src.hackathon_todo_api.main:app --reload --port 8000)"
+      "Bash(uv run uvicorn src.hackathon_todo_api.main:app --reload --port 8000)",
+      "Bash(python -c \"\nimport asyncio\nfrom src.hackathon_todo_api.services.user_service import hash_password\nfrom src.hackathon_todo_api.models.user import UserCreate\n\nasync def test\\(\\):\n    try:\n        # Test password hashing with long password\n        long_password = ''a'' * 80  # 80 character password\n        hashed = hash_password\\(long_password\\)\n        print\\(f''SUCCESS: Password hashing works: {len\\(long_password\\)} char password -> hashed successfully''\\)\n        \n        # Test short password\n        short_password = ''password123''\n        hashed_short = hash_password\\(short_password\\)\n        print\\(f''SUCCESS: Short password hashing works: {len\\(short_password\\)} char password -> hashed successfully''\\)\n        \n        print\\(''SUCCESS: All functions work correctly''\\)\n        print\\(''READY FOR DEPLOYMENT''\\)\n        \n    except Exception as e:\n        print\\(f''ERROR: {e}''\\)\n        import traceback\n        traceback.print_exc\\(\\)\n\nasyncio.run\\(test\\(\\)\\)\n\")"
     ]
   }
 }

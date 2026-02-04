@@ -1,119 +1,96 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from datetime import timedelta
+from pydantic import BaseModel, EmailStr
+
 from ..auth.jwt import create_access_token
 from ..config import settings
-from pydantic import BaseModel
-from typing import Optional
-import hashlib
-import secrets
-import uuid
+from ..services.user_service import (
+    create_user,
+    authenticate_user,
+    get_user_by_email
+)
+from ..models.user import UserCreate
 
 router = APIRouter()
 
 
-
-class UserCreate(BaseModel):
+class UserRegisterRequest(BaseModel):
     email: str
     password: str
 
 
-class UserLogin(BaseModel):
+class UserLoginRequest(BaseModel):
     email: str
     password: str
 
 
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     access_token: str
     token_type: str
 
 
-fake_users_db = {}  # In reality, you'd have a proper user model and database
-
-
-def hash_password_with_salt(password: str) -> tuple[str, str]:
-    """Generate a salt and hash the password with SHA-256"""
-    salt = secrets.token_hex(32)  # Generate a random 32-byte salt
-    pwdhash = hashlib.pbkdf2_hmac('sha256',
-                                  password.encode('utf-8'),
-                                  salt.encode('utf-8'),
-                                  100000)  # Use 100,000 iterations
-    pwdhash = pwdhash.hex()
-    return pwdhash, salt
-
-
-def verify_password(plain_password: str, hashed_password: str, salt: str) -> bool:
-    """Verify a password against its hash and salt"""
-    pwdhash = hashlib.pbkdf2_hmac('sha256',
-                                  plain_password.encode('utf-8'),
-                                  salt.encode('utf-8'),
-                                  100000)
-    pwdhash = pwdhash.hex()
-    return pwdhash == hashed_password
-
-
-def authenticate_user(email: str, password: str):
-    # In a real implementation, this would query the database
-    if email in fake_users_db:
-        user = fake_users_db[email]
-        if verify_password(password, user["hashed_password"], user["salt"]):
-            return user
-    return None
-
-
-@router.post("/auth/register", response_model=Token)
-async def register(user: UserCreate):
+@router.post("/auth/register", response_model=TokenResponse)
+async def register(user_data: UserRegisterRequest):
     """
     Register a new user
     """
-    # Check if user already exists
-    if user.email in fake_users_db:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    # Validate email format (basic validation)
-    if "@" not in user.email or "." not in user.email:
+    # Validate email format
+    if "@" not in user_data.email or "." not in user_data.email.split("@")[-1]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid email format"
         )
 
     # Validate password length
-    if len(user.password) < 8:
+    if len(user_data.password) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 8 characters"
         )
 
-    # Hash the password with salt
-    hashed_password, salt = hash_password_with_salt(user.password)
+    if len(user_data.password) > 72:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be no more than 72 characters"
+        )
 
-    # Create user in "database"
-    user_id = str(uuid.uuid4())
-    fake_users_db[user.email] = {
-        "id": user_id,
-        "email": user.email,
-        "hashed_password": hashed_password,
-        "salt": salt
-    }
+    # Check if user exists
+    existing = await get_user_by_email(user_data.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
 
-    # Create access token
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user_id},
-        expires_delta=access_token_expires
-    )
+    try:
+        # Create user in database
+        user = await create_user(UserCreate(
+            email=user_data.email,
+            password=user_data.password
+        ))
 
-    return {"access_token": access_token, "token_type": "bearer"}
+        # Create access token with user ID
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id)},
+            expires_delta=access_token_expires
+        )
+
+        return TokenResponse(access_token=access_token, token_type="bearer")
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
-@router.post("/auth/login", response_model=Token)
-async def login(user_credentials: UserLogin):
+@router.post("/auth/login", response_model=TokenResponse)
+async def login(credentials: UserLoginRequest):
     """
     Login a user and return access token
     """
-    user = authenticate_user(user_credentials.email, user_credentials.password)
+    user = await authenticate_user(credentials.email, credentials.password)
 
     if not user:
         raise HTTPException(
@@ -122,20 +99,21 @@ async def login(user_credentials: UserLogin):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create access token
+    # Create access token with user ID
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user["id"]},
+        data={"sub": str(user.id)},
         expires_delta=access_token_expires
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return TokenResponse(access_token=access_token, token_type="bearer")
 
 
 @router.post("/auth/logout")
 async def logout():
     """
     Logout a user (client-side token invalidation)
+    Note: With JWT, actual invalidation happens client-side by removing the token.
+    For production, consider implementing a token blacklist.
     """
-    # In a real implementation, you might add the token to a blacklist
     return {"message": "Logged out successfully"}
