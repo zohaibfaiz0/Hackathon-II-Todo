@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from '@/lib/auth'
 import { getTasks, createTask, updateTask, deleteTask, toggleTaskComplete } from '@/lib/api'
 import { Task } from '@/types'
+import { ChatWindow } from '@/components/chat'
 
 export default function DashboardPage() {
   const { data: sessionData, status, signOut } = useSession()
@@ -16,6 +17,25 @@ export default function DashboardPage() {
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDropdown])
 
   useEffect(() => {
     if (status === 'authenticated') fetchTasks()
@@ -23,7 +43,7 @@ export default function DashboardPage() {
 
   const fetchTasks = async () => {
     try {
-      setLoading(true)
+      if (tasks.length === 0) setLoading(true)
       const data = await getTasks()
       setTasks(data)
     } catch (error) {
@@ -83,11 +103,30 @@ export default function DashboardPage() {
     }
   }
 
+  const filteredTasks = tasks.filter(task => {
+    if (filter === 'pending') return !task.completed
+    if (filter === 'completed') return task.completed
+    return true
+  })
+
+  const pendingCount = tasks.filter(t => !t.completed).length
+
+  const handleProfileClick = () => {
+    if (!showDropdown && isChatOpen) {
+      setIsChatOpen(false)
+    }
+    setShowDropdown(!showDropdown)
+  }
+
+  const handleSignOut = () => {
+    setShowDropdown(false)
+    signOut()
+  }
+
   if (status === 'loading') {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-        <div style={{ width: 24, height: 24, border: '2px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -97,147 +136,273 @@ export default function DashboardPage() {
     return null
   }
 
-  const filteredTasks = tasks.filter(task => {
-    if (filter === 'pending') return !task.completed
-    if (filter === 'completed') return task.completed
-    return true
-  })
-
-  const pendingCount = tasks.filter(t => !t.completed).length
-
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, -apple-system, sans-serif' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Animated Background Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-indigo-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-20 right-1/3 w-60 h-60 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
       {/* Header */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 20 }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, background: '#6366f1', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 13l4 4L19 7" />
-              </svg>
+      <header 
+        className="sticky top-0 backdrop-blur-xl bg-white/70 border-b border-white/20 shadow-lg shadow-black/5"
+        style={{ zIndex: 100 }}
+      >
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl blur opacity-75" />
+              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             </div>
-            <span style={{ fontWeight: 600, color: '#1e293b', fontSize: 16 }}>TaskFlow</span>
+            <div>
+              <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">TaskFlow</span>
+              <div className="h-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full" />
+            </div>
           </div>
-          
-          <div style={{ position: 'relative' }}>
+
+          {/* Profile Button */}
+          <div ref={profileRef} className="relative">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              style={{ width: 32, height: 32, background: '#6366f1', borderRadius: '50%', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              type="button"
+              onClick={handleProfileClick}
+              style={{
+                width: 40,
+                height: 40,
+                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                borderRadius: 12,
+                border: 'none',
+                cursor: 'pointer',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                position: 'relative',
+                zIndex: 101,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)'
+              }}
             >
               {sessionData?.user?.email?.[0]?.toUpperCase() || 'U'}
             </button>
-            
+
             {showDropdown && (
-              <>
-                <div onClick={() => setShowDropdown(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
-                <div style={{ position: 'absolute', right: 0, marginTop: 8, width: 180, background: '#fff', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', zIndex: 40, overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 12px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: 12,
+                  width: 240,
+                  background: 'white',
+                  borderRadius: 16,
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+                  zIndex: 102,
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ padding: 16, borderBottom: '1px solid #f1f5f9' }}>
+                  <p style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Signed in as</p>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {sessionData?.user?.email}
-                  </div>
-                  <button
-                    onClick={() => signOut()}
-                    style={{ width: '100%', padding: '10px 12px', textAlign: 'left', fontSize: 13, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Sign out
-                  </button>
+                  </p>
                 </div>
-              </>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: '#ef4444',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#fef2f2'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main */}
-      <main style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b', margin: 0 }}>My Tasks</h1>
-          <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-            {pendingCount === 0 ? 'All done! 🎉' : `${pendingCount} task${pendingCount > 1 ? 's' : ''} remaining`}
+      {/* Dropdown Backdrop */}
+      {showDropdown && (
+        <div
+          onClick={() => setShowDropdown(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99,
+            background: 'transparent',
+          }}
+        />
+      )}
+
+      {/* Main Content */}
+      <main className="relative max-w-4xl mx-auto px-6 py-8" style={{ zIndex: 1 }}>
+        {/* Hero Section */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            My Tasks
+            <span className="inline-block ml-3 text-2xl">✨</span>
+          </h1>
+          <p className="text-gray-600">
+            {pendingCount === 0 ? (
+              <span className="flex items-center gap-2">
+                All caught up! Time to relax 🎉
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-xs font-bold rounded-full">{pendingCount}</span>
+                {pendingCount === 1 ? 'task' : 'tasks'} waiting for you
+              </span>
+            )}
           </p>
         </div>
 
-        {/* Add Task */}
-        <form onSubmit={handleCreateTask} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="Add a new task..."
-            style={{ flex: 1, height: 40, padding: '0 12px', fontSize: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, outline: 'none' }}
-          />
-          <button
-            type="submit"
-            disabled={creatingTask || !newTaskTitle.trim()}
-            style={{ height: 40, padding: '0 16px', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 500, border: 'none', borderRadius: 8, cursor: 'pointer', opacity: creatingTask || !newTaskTitle.trim() ? 0.5 : 1 }}
-          >
-            {creatingTask ? 'Adding...' : 'Add'}
-          </button>
+        {/* Add Task Card */}
+        <form onSubmit={handleCreateTask} className="mb-6">
+          <div className="group relative bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-black/5 border border-white/20 p-6 hover:shadow-xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-indigo-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="relative flex gap-3">
+              <input
+                type="text"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="What needs to be done?"
+                className="flex-1 bg-white/50 border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-200"
+              />
+              <button
+                type="submit"
+                disabled={creatingTask || !newTaskTitle.trim()}
+                className="relative px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100 overflow-hidden group"
+              >
+                <span className="relative z-10">{creatingTask ? 'Adding...' : 'Add Task'}</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              </button>
+            </div>
+          </div>
         </form>
 
         {/* Filters */}
-        <div style={{ display: 'inline-flex', gap: 4, padding: 4, background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 20 }}>
+        <div className="mb-6 flex gap-3">
           {(['all', 'pending', 'completed'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              style={{ padding: '6px 12px', fontSize: 12, fontWeight: 500, border: 'none', borderRadius: 6, cursor: 'pointer', background: filter === f ? '#6366f1' : 'transparent', color: filter === f ? '#fff' : '#64748b' }}
+              className={`
+                relative px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 overflow-hidden
+                ${filter === f 
+                  ? 'text-white shadow-lg scale-105' 
+                  : 'text-gray-600 hover:bg-white/50 hover:scale-105'
+                }
+              `}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {filter === f && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 pointer-events-none" />
+              )}
+              {filter !== f && (
+                <div className="absolute inset-0 bg-white/40 backdrop-blur-sm pointer-events-none" />
+              )}
+              <span className="relative z-10 capitalize">{f}</span>
             </button>
           ))}
         </div>
 
         {/* Task List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="space-y-3">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} style={{ height: 52, background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+              <div key={i} className="h-20 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 animate-pulse" />
             ))
           ) : filteredTasks.length === 0 ? (
-            <div style={{ padding: '48px 0', textAlign: 'center' }}>
-              <div style={{ width: 48, height: 48, background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+            <div className="text-center py-20 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <p style={{ fontSize: 13, color: '#64748b' }}>No tasks</p>
+              <p className="text-gray-500 font-medium">No tasks here</p>
             </div>
           ) : (
             filteredTasks.map((task) => (
-              <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <button
-                  onClick={() => handleToggleComplete(task.id)}
-                  style={{ width: 20, height: 20, borderRadius: 5, border: task.completed ? 'none' : '2px solid #cbd5e1', background: task.completed ? '#10b981' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                >
-                  {task.completed && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
+              <div
+                key={task.id}
+                className="group relative bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl border border-white/20 p-4 transition-all duration-300 hover:scale-[1.02]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-indigo-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className="relative flex items-center gap-4">
+                  <button
+                    onClick={() => handleToggleComplete(task.id)}
+                    className={`
+                      relative flex-shrink-0 w-6 h-6 rounded-lg border-2 transition-all duration-300
+                      ${task.completed 
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 border-green-500 scale-110' 
+                        : 'border-gray-300 hover:border-blue-500 hover:scale-110'
+                      }
+                    `}
+                  >
+                    {task.completed && (
+                      <svg className="w-full h-full p-0.5" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14, color: task.completed ? '#94a3b8' : '#1e293b', textDecoration: task.completed ? 'line-through' : 'none', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {task.title}
-                  </p>
-                  {task.description && (
-                    <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {task.description}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium transition-all duration-300 ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                      {task.title}
                     </p>
-                  )}
-                </div>
+                    {task.description && (
+                      <p className="text-sm text-gray-500 mt-0.5 truncate">{task.description}</p>
+                    )}
+                  </div>
 
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button onClick={() => openEdit(task)} style={{ width: 28, height: 28, background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button onClick={() => handleDeleteTask(task.id)} style={{ width: 28, height: 28, background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={() => openEdit(task)}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors duration-200"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -247,36 +412,129 @@ export default function DashboardPage() {
 
       {/* Edit Modal */}
       {editingTask && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={() => setEditingTask(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: 12, width: '100%', maxWidth: 400, boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b', margin: 0 }}>Edit Task</h2>
-              <button onClick={() => setEditingTask(null)} style={{ width: 28, height: 28, background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 200 }}>
+          <div onClick={() => setEditingTask(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden transform transition-all">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
+            
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Edit Task</h2>
+              <button
+                onClick={() => setEditingTask(null)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors duration-200"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            <div className="p-6 space-y-5">
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Title</label>
-                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{ width: '100%', height: 40, padding: '0 12px', fontSize: 14, border: '1px solid #e2e8f0', borderRadius: 8, outline: 'none', boxSizing: 'border-box' }} />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-200"
+                />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Description</label>
-                <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3} style={{ width: '100%', padding: 12, fontSize: 14, border: '1px solid #e2e8f0', borderRadius: 8, outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white resize-none transition-all duration-200"
+                />
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: 16, borderTop: '1px solid #e2e8f0' }}>
-              <button onClick={() => setEditingTask(null)} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#64748b', background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveEdit} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#fff', background: '#6366f1', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Save</button>
+
+            <div className="flex justify-end gap-3 p-6 bg-gray-50 border-t border-gray-100">
+              <button
+                onClick={() => setEditingTask(null)}
+                className="px-6 py-2.5 font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="relative px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden group"
+              >
+                <span className="relative z-10">Save Changes</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');`}</style>
+      {/* ============================================ */}
+      {/* FIXED: Floating Chat with Responsive Height */}
+      {/* ============================================ */}
+      <div 
+        className="fixed bottom-6 right-6 flex flex-col items-end"
+        style={{ 
+          zIndex: showDropdown ? 50 : 90,
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Chat Window - NOW WITH RESPONSIVE HEIGHT */}
+        <div 
+          className={`
+            transition-all duration-500 ease-out mb-4
+            ${isChatOpen 
+              ? 'opacity-100 scale-100 translate-y-0' 
+              : 'opacity-0 scale-95 translate-y-8'
+            }
+          `}
+          style={{ 
+            pointerEvents: isChatOpen ? 'auto' : 'none',
+          }}
+        >
+          {/* 
+            KEY FIX: Using CSS clamp/min to make height responsive
+            - Minimum: 400px (so it's still usable on small screens)
+            - Preferred: calc(100vh - 140px) (viewport minus button + margins)
+            - Maximum: 600px (original height on large screens)
+          */}
+          <div 
+            className="w-96 max-w-[calc(100vw-48px)] bg-white rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden flex flex-col"
+            style={{
+              height: '450px',
+            }}
+          >
+            {isChatOpen && <ChatWindow onTaskUpdate={fetchTasks} />}
+          </div>
+        </div>
+
+        {/* Floating Toggle Button */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          style={{ pointerEvents: 'auto' }}
+          className={`
+            relative group w-16 h-16 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-500 flex-shrink-0
+            ${isChatOpen 
+              ? 'bg-gray-900 rotate-90 hover:bg-black scale-95' 
+              : 'bg-gradient-to-br from-blue-600 to-indigo-600 hover:scale-110'
+            }
+          `}
+        >
+          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${isChatOpen ? 'hidden' : ''}`} />
+          {isChatOpen ? (
+            <svg className="w-7 h-7 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <div className="relative z-10">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse" />
+            </div>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

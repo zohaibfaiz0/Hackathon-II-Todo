@@ -191,6 +191,73 @@ npm run dev
 - `DELETE /api/tasks/{id}` - Delete a task
 - `PATCH /api/tasks/{id}/complete` - Toggle task completion
 
+### Chat
+- `POST /api/{user_id}/chat` - Send a chat message and get AI response
+
+---
+
+## Phase III: AI-Powered Todo Chatbot
+
+Phase III adds an AI-powered chatbot interface for managing todos through natural language.
+
+### Features
+- Natural language task management ("Add a task to buy groceries")
+- Conversational interface with persistent history
+- AI-powered intent recognition using OpenAI
+- Real-time task operations via chat
+
+### Chat Commands Examples
+| You Say | What Happens |
+|---------|--------------|
+| "Add a task to buy groceries" | Creates a new task |
+| "Show my tasks" | Lists all your tasks |
+| "What's pending?" | Lists incomplete tasks |
+| "Mark task 3 as complete" | Completes the task |
+| "Delete task 2" | Removes the task |
+| "Change task 1 to 'Call mom'" | Updates the task |
+
+### Additional Setup for Phase III
+
+#### Environment Variables
+Add to `backend/.env`:
+```
+OPENAI_API_KEY=sk-your-openai-api-key-here
+```
+
+Get your API key from: https://platform.openai.com/api-keys
+
+#### Database Migration
+```bash
+cd backend
+uv run alembic upgrade head
+```
+
+This creates the `conversations` and `messages` tables.
+
+### Running Phase III
+
+1. **Start Backend** (with OpenAI key configured):
+```bash
+cd backend
+uv run uvicorn src.hackathon_todo_api.main:app --reload --port 8000
+```
+
+2. **Start Frontend**:
+```bash
+cd frontend
+npm run dev
+```
+
+3. **Use the Chat**:
+   - Log in to the dashboard
+   - Click the chat button (bottom-right corner)
+   - Start chatting with your AI todo assistant!
+
+### Tech Stack (Phase III Additions)
+- OpenAI API (Chat Completions with Function Calling)
+- Custom MCP-style tools for task operations
+- Real-time chat UI components
+
 ---
 
 ## Project Structure

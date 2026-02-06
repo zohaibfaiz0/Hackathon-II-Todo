@@ -61,3 +61,47 @@ npm run dev
 npm run build
 npm start
 ```
+
+## Phase III: Chat Components
+
+### Chat Directory Structure
+```
+src/components/chat/
+├── index.ts        # Exports all chat components
+├── ChatWindow.tsx  # Main chat container with state management
+├── ChatMessage.tsx # Individual message display
+└── ChatInput.tsx   # Text input with send button
+```
+
+### Chat API Client
+Location: `src/lib/chat.ts`
+
+```typescript
+import { sendChatMessage } from '@/lib/chat';
+
+// Send a message
+const response = await sendChatMessage('Show my tasks', conversationId);
+```
+
+### Chat Types
+Location: `src/types/chat.ts`
+
+Key types:
+- `ChatMessage` - Message with role, content, timestamp
+- `ChatResponse` - API response with conversation_id, response, tool_calls
+- `ToolCall` - Tool execution details
+
+### Using Chat Components
+```tsx
+import { ChatWindow } from '@/components/chat';
+
+// In your component
+<ChatWindow initialConversationId={123} />
+```
+
+### Dashboard Integration
+The chat is integrated into the dashboard page (`app/dashboard/page.tsx`) with:
+- Floating chat button (bottom-right)
+- Slide-in chat panel
+- State management for open/close
+```
