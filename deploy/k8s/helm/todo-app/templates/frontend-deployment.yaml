@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo-app.fullname" . }}-frontend
+  labels:
+    app: frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # Points to the backend service.
+            # IMPORTANT: For client-side fetching in browser, this needs to be accessible from the browser.
+            # In Minikube with port-forwarding, localhost:8000 is often used.
+            # Or use relative path if ingress is set up (advanced).
+            - name: NEXT_PUBLIC_API_URL
+              value: {{ .Values.frontend.env.NEXT_PUBLIC_API_URL | quote }}

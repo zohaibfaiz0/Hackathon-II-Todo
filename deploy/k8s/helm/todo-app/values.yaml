@@ -1,0 +1,52 @@
+# Global settings
+nameOverride: ""
+fullnameOverride: ""
+
+# Backend Configuration
+backend:
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    # DATABASE_URL will be constructed from postgres settings
+    ALLOWED_ORIGINS: "*"
+  # Secrets will be injected via secrets.yaml template
+
+# Frontend Configuration
+frontend:
+  replicaCount: 1
+  image:
+    repository: todo-frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30000  # Fixed port for easy access via Minikube IP
+  env:
+    # NEXT_PUBLIC_API_URL needs to point to backend
+    # In Minikube, this might need adjustment based on how you access it
+    # For local dev via port-forward, localhost:8000 works
+    NEXT_PUBLIC_API_URL: "http://localhost:8000"
+
+# Postgres Configuration
+postgres:
+  image:
+    repository: postgres
+    pullPolicy: IfNotPresent
+    tag: "15-alpine"
+  storage:
+    size: 1Gi
+    className: standard
+  auth:
+    username: todo_user
+    database: todo_db
+    # Password should be provided via secret, defaulting here for dev only
+    password: "secure_password_dev_only"
+  service:
+    port: 5432
