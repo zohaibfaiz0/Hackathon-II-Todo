@@ -376,8 +376,107 @@ Original Phase I specs:
 * `specs/todo-console-app/plan.md` – Phase I Architecture plan
 * `specs/todo-console-app/tasks.md` – Phase I Task breakdown
 
+
+## Phase III: AI-Powered Todo Chatbot
+Adds an AI chatbot interface for managing tasks via natural language using Google Gemini.
+
+### Features
+- **Natural Language**: "Add a task to buy groceries"
+- **Context Aware**: "Delete the last task I added"
+- **Tool Calling**: AI executes database operations directly
+- **Tech Stack**: Google Gemini API, Custom Tool Schema, React Chat UI
+
+### Environment Variables
+Add to `backend/.env`:
+```
+GEMINI_API_KEY=your-gemini-api-key
+```
+
+---
+
+## Phase IV: Kubernetes Deployment
+Containerizes the application and deploys it to a local Kubernetes cluster using Helm.
+
+### Tech Stack
+- **Containerization**: Docker (Multi-stage builds)
+- **Orchestration**: Kubernetes (Minikube)
+- **Config Management**: Helm Charts
+
+### Features
+- Production-ready Docker images (`python:3.12-slim`, `node:20-alpine`)
+- StatefulSet for PostgreSQL persistence
+- Secrets management for API keys
+- Automated deployment script
+
+### Quick Deploy (Local)
+```bash
+cd deploy
+bash local-setup.sh
+```
+*This builds images inside Minikube and deploys the Helm chart.*
+
+---
+
+## Phase V: Advanced Cloud Architecture
+Adds Event-Driven Architecture and Distributed Application Runtime (Dapr).
+
+### Architecture
+- **Event Bus**: Redpanda (Kafka-compatible)
+- **Runtime**: Dapr (Sidecars)
+- **Pattern**: Pub/Sub (Publish-Subscribe)
+
+### Features
+- **Event Logging**: Backend publishes `task.created` events to Redpanda via Dapr.
+- **Service Invocation**: Frontend communicates with Backend via Dapr sidecars.
+- **Resilience**: Retries, circuit breaking, and observability provided by Dapr.
+
+### Deployment Note
+Phase 5 code is fully implemented in the repository. However, for local demonstrations on resource-constrained environments (like standard laptops), the "Heavy" features (Redpanda/Dapr sidecars) are disabled by default in `values.yaml` to ensure stability.
+
+To enable full Phase 5 features, set `redpanda.enabled: true` in `deploy/k8s/helm/todo-app/values.yaml`.
+
+---
+
+## Project Structure
+
+```
+hackathon-todo/
+├── frontend/                 # Next.js application
+│   ├── src/
+│   │   ├── app/             # Pages & Chat Integration
+│   │   ├── components/      # UI Components (ChatWindow, etc.)
+│   │   ├── lib/             # API Clients (Standard & Dapr)
+├── backend/                  # FastAPI application
+│   ├── src/
+│   │   └── hackathon_todo_api/
+│   │       ├── agents/      # AI Agents (Gemini)
+│   │       ├── tools/       # Tool definitions
+│   │       ├── services/    # Business logic (with Event Publishing)
+│   │       ├── routes/      # API endpoints (including Event Subscriber)
+├── deploy/                   # Infrastructure
+│   ├── k8s/helm/todo-app/   # Main Helm Chart
+│   │   ├── templates/       # K8s Manifests
+│   │   │   ├── components/  # Dapr Components (PubSub)
+│   └── local-setup.sh       # Automation script
+├── specs/                    # Spec-Driven Development Artifacts
+│   ├── phase-ii-.../
+│   ├── phase-iii-.../
+│   ├── phase-iv-.../
+│   └── phase-v-.../
+```
+
+---
+
+## Running with Docker (Simple)
+
+To run without Kubernetes:
+
+```bash
+docker-compose up --build
+```
+
 ---
 
 ## License
-
 MIT License
+```

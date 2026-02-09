@@ -1,10 +1,27 @@
 from typing import List, Optional
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
+import httpx
 from ..database import AsyncSessionLocal
 from ..models.task import Task, TaskUpdate as TaskUpdateModel
 from ..models.user import User
 from ..schemas.task import TaskCreate, TaskRead, TaskUpdate
+
+
+async def publish_event(topic: str, data: dict):
+    """Publish event to Dapr sidecar."""
+    try:
+        # Default Dapr port is 3500
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"http://localhost:3500/v1.0/publish/todo-pubsub/{topic}",
+                json=data,
+                timeout=2.0
+            )
+            print(f"Published event to {topic}: {data}")
+    except Exception as e:
+        # Don't fail the request if Dapr isn't running (graceful degradation)
+        print(f"Failed to publish event (Dapr might be offline): {e}")
 
 
 async def get_tasks(user_id: str) -> List[TaskRead]:
@@ -59,6 +76,14 @@ async def create_task(task_data: TaskCreate, user_id: str) -> TaskRead:
         session.add(db_task)
         await session.commit()
         await session.refresh(db_task)
+
+        # Publish event via Dapr
+        await publish_event("task-events", {
+            "type": "task.created",
+            "id": db_task.id,
+            "title": db_task.title,
+            "user_id": user_id
+        })
 
         return TaskRead(
             id=db_task.id,

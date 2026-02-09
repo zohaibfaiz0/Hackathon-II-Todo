@@ -1,6 +1,12 @@
 apiVersion: v2
 name: todo-app
-description: A Helm chart for Hackathon Todo App (FastAPI + Next.js + Postgres)
+description: A Helm chart for Hackathon Todo App (FastAPI + Next.js + Postgres + Dapr + Redpanda)
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "1.0.0"
+
+dependencies:
+  - name: redpanda
+    version: 5.8.10
+    repository: https://charts.redpanda.com
+    condition: redpanda.enabled

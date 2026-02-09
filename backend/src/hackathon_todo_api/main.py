@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .database import init_db
-from .routes import health, tasks, auth, chat
+from .routes import health, tasks, auth, chat, events  # Added events import
 
 
 @asynccontextmanager
@@ -44,6 +44,7 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(tasks.router, prefix="/api", tags=["tasks"])
 app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(events.router, prefix="/api", tags=["events"])  # Registered events router
 
 
 @app.get("/")

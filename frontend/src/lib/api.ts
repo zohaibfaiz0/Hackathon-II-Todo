@@ -1,6 +1,15 @@
 import { Task, TaskInput } from '@/types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// Support Dapr sidecar invocation if enabled
+const DIRECT_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const DAPR_PORT = process.env.NEXT_PUBLIC_DAPR_HTTP_PORT || "3500";
+const ENABLE_DAPR = process.env.NEXT_PUBLIC_ENABLE_DAPR === "true";
+
+// If Dapr is enabled, route requests through sidecar
+// Format: http://localhost:<dapr-port>/v1.0/invoke/<app-id>/method
+const API_BASE_URL = ENABLE_DAPR 
+  ? `http://localhost:${DAPR_PORT}/v1.0/invoke/backend/method`
+  : DIRECT_URL;
 
 const getSessionData = (): { userId: string; token: string } | null => {
   if (typeof window === 'undefined') return null
@@ -41,7 +50,7 @@ const apiRequest = async <T>(
     path = `/${userId}/tasks` + endpoint.substring(6)
   }
 
-  // Final URL: http://localhost:8000/api/{userId}/tasks
+  // Final URL
   const url = `${API_BASE_URL}/api${path}`
   
   console.log('API URL:', url) // Debug log
@@ -51,6 +60,8 @@ const apiRequest = async <T>(
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
+      // Add Dapr App ID header if using Dapr (optional but good practice)
+      ...(ENABLE_DAPR ? { 'dapr-app-id': 'backend' } : {}),
       ...options.headers,
     },
   })

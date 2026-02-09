@@ -50,3 +50,28 @@ postgres:
     password: "secure_password_dev_only"
   service:
     port: 5432
+# Redpanda Configuration
+redpanda:
+  enabled: false
+  auth:
+    enabled: false
+  tls:
+    enabled: false
+  statefulset:
+    replicas: 1
+  # Minimize resource usage for local dev
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  # Disable tuning (fails on Minikube/Docker)
+  tuning:
+    tune_aio_events: false
+  # Disable heavy post-install checks
+  post_install_job:
+    enabled: false
+  post_upgrade_job:
+    enabled: false

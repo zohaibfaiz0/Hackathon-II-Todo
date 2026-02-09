@@ -13,7 +13,7 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies into a virtual environment
 # --no-dev: Production dependencies only
 # --frozen: Require uv.lock to match pyproject.toml
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Stage 2: Runner
 FROM python:3.12-slim AS runner

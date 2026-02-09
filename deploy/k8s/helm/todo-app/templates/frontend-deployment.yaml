@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: frontend
+      annotations:
+        dapr.io/enabled: "false"
+        dapr.io/app-id: "frontend"
+        dapr.io/app-port: "3000"
     spec:
       containers:
         - name: frontend
@@ -28,4 +32,7 @@ spec:
             # In Minikube with port-forwarding, localhost:8000 is often used.
             # Or use relative path if ingress is set up (advanced).
             - name: NEXT_PUBLIC_API_URL
-              value: {{ .Values.frontend.env.NEXT_PUBLIC_API_URL | quote }}
+              value: "http://localhost:8000"
+            - name: NEXT_PUBLIC_ENABLE_DAPR
+              value: "false"
+             
